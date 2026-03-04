@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Holi</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+overflow:hidden;
+}
+
+body{
+width:100vw;
+height:100vh;
+background:linear-gradient(45deg,#ff9a9e,#fecfef,#feada6,#fbc2eb);
+background-size:400% 400%;
+animation:bgMove 10s ease infinite;
+font-family:Arial;
+cursor:none;
+}
+
+@keyframes bgMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+canvas{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:1;
+}
+
+.text-container{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+text-align:center;
+z-index:10;
+}
+
+h1{
+font-size:4rem;
+color:white;
+text-shadow:0 0 30px #ff00de,0 0 60px #00ffff;
+animation:glow 2s ease-in-out infinite alternate;
+}
+
+p{
+font-size:1.5rem;
+color:white;
+margin-top:10px;
+}
+
+@keyframes glow{
+from{ text-shadow:0 0 30px #fff,0 0 60px #ff00de;}
+to{ text-shadow:0 0 30px #00ffff,0 0 60px #ffff00;}
+}
+
+.btn{
+position:absolute;
+bottom:50px;
+left:50%;
+transform:translateX(-50%);
+z-index:20;
+padding:16px 40px;
+font-size:1.4rem;
+font-weight:bold;
+color:white;
+background:linear-gradient(90deg,#ff00de,#00ffff,#ffff00);
+background-size:200% auto;
+border:none;
+border-radius:50px;
+cursor:pointer;
+animation:btnAnim 2s linear infinite;
+}
+
+@keyframes btnAnim{
+0%{background-position:0%;}
+100%{background-position:200%;}
+}
+
+.cursor{
+position:fixed;
+width:20px;
+height:20px;
+background:white;
+border-radius:50%;
+pointer-events:none;
+z-index:9999;
+transform:translate(-50%,-50%);
+mix-blend-mode:difference;
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="text-container">
+<h1>Happy Holi 🎨</h1>
+<p>Aman wishes you and your family a very Happy Holi!</p>
+</div>
+
+<button class="btn" onclick="burstColors()">Click for Color Burst</button>
+
+<div class="cursor" id="cursor"></div>
+
+<script>
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+let w,h;
+let particles=[];
+let balloons=[];
+
+const colors=['#ff00de','#00ffff','#ffff00','#ff3300','#00ff00','#8a2be2'];
+
+function resize(){
+w=canvas.width=window.innerWidth;
+h=canvas.height=window.innerHeight;
+}
+
+window.addEventListener("resize",resize);
+resize();
+
+let mouse={x:w/2,y:h/2};
+
+document.addEventListener("mousemove",(e)=>{
+mouse.x=e.clientX;
+mouse.y=e.clientY;
+
+document.getElementById("cursor").style.left=e.clientX+"px";
+document.getElementById("cursor").style.top=e.clientY+"px";
+
+if(Math.random()>0.3){
+particles.push(new Particle(e.clientX,e.clientY));
+}
+});
+
+function burstColors(){
+
+for(let i=0;i<150;i++){
+
+let angle=Math.random()*Math.PI*2;
+let speed=Math.random()*15+5;
+
+particles.push(
+new Particle(
+w/2,
+h/2,
+Math.cos(angle)*speed,
+Math.sin(angle)*speed
+)
+);
+}
+
+for(let i=0;i<20;i++){
+
+setTimeout(()=>{
+
+let b=new Balloon();
+b.x=Math.random()*w;
+b.y=h;
+
+balloons.push(b);
+
+},i*100);
+
+}
+
+}
+
+class Particle{
+
+constructor(x,y,vx,vy){
+
+this.x=x||Math.random()*w;
+this.y=y||h+10;
+
+this.vx=vx||(Math.random()-0.5)*3;
+this.vy=vy||-(Math.random()*4+2);
+
+this.size=Math.random()*8+3;
+
+this.color=colors[Math.floor(Math.random()*colors.length)];
+
+this.life=1;
+}
+
+update(){
+
+this.x+=this.vx;
+this.y+=this.vy;
+
+this.vy+=0.1;
+
+this.life-=0.01;
+
+}
+
+draw(){
+
+ctx.globalAlpha=this.life;
+
+ctx.fillStyle=this.color;
+
+ctx.beginPath();
+ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+ctx.fill();
+
+ctx.globalAlpha=1;
+
+}
+
+}
+
+class Balloon{
+
+constructor(){
+
+this.r=30;
+this.x=Math.random()*w;
+this.y=h+this.r;
+
+this.vx=(Math.random()-0.5)*4;
+this.vy=-(Math.random()*10+12);
+
+this.color=colors[Math.floor(Math.random()*colors.length)];
+
+this.popped=false;
+
+}
+
+update(){
+
+if(this.popped) return;
+
+this.vy+=0.2;
+
+this.x+=this.vx;
+this.y+=this.vy;
+
+let dx=mouse.x-this.x;
+let dy=mouse.y-this.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<this.r+30){
+this.pop();
+}
+
+}
+
+pop(){
+
+this.popped=true;
+
+for(let i=0;i<20;i++){
+
+particles.push(
+new Particle(
+this.x,
+this.y,
+(Math.random()-0.5)*15,
+(Math.random()-0.5)*15
+)
+);
+
+}
+
+}
+
+draw(){
+
+if(this.popped) return;
+
+ctx.strokeStyle="rgba(255,255,255,0.5)";
+ctx.lineWidth=2;
+
+ctx.beginPath();
+ctx.moveTo(this.x,this.y+this.r);
+ctx.lineTo(this.x,this.y+this.r+100);
+ctx.stroke();
+
+let grad=ctx.createRadialGradient(
+this.x-10,
+this.y-10,
+0,
+this.x,
+this.y,
+this.r
+);
+
+grad.addColorStop(0,"white");
+grad.addColorStop(0.3,this.color);
+grad.addColorStop(1,this.darken(this.color));
+
+ctx.fillStyle=grad;
+
+ctx.beginPath();
+ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+ctx.fill();
+
+}
+
+darken(col){
+
+let c=col.replace("#","");
+
+let r=parseInt(c.substr(0,2),16);
+let g=parseInt(c.substr(2,2),16);
+let b=parseInt(c.substr(4,2),16);
+
+return `rgb(${r*0.6},${g*0.6},${b*0.6})`;
+
+}
+
+}
+
+setInterval(()=>{
+
+if(particles.length<100){
+
+particles.push(new Particle());
+
+}
+
+},100);
+
+function animate(){
+
+ctx.clearRect(0,0,w,h);
+
+particles=particles.filter(p=>p.life>0);
+
+particles.forEach(p=>{
+p.update();
+p.draw();
+});
+
+balloons=balloons.filter(b=>!b.popped);
+
+balloons.forEach(b=>{
+b.update();
+b.draw();
+});
+
+requestAnimationFrame(animate);
+
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
